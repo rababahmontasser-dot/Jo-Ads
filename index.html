@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منصة إعلاناتي - النسخة المتصلة بالسيرفر</title>
+    <title>منصة إعلانات الأردن</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; background-color: #f4f7f6; }
         nav { background: #1a73e8; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
@@ -14,17 +14,18 @@
         .ad-card-content { padding: 15px; }
         .price { color: #28a745; font-weight: bold; }
         
-        /* نافذة الإضافة */
+        /* تصميم النافذة المنبثقة */
         #modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); justify-content:center; align-items:center; z-index:2000; }
         .modal-content { background:white; padding:25px; border-radius:10px; width:90%; max-width:400px; }
-        .modal-content input { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        .modal-content h3 { margin-top: 0; }
+        .modal-content input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
     </style>
 </head>
 <body>
 
     <nav>
-        <div style="font-size: 20px; font-weight: bold;">منصة الإعلانات</div>
-        <button class="add-btn" id="openModalBtn"> + أضف إعلانك </button>
+        <div style="font-size: 20px; font-weight: bold;">منصة الإعلانات العربية</div>
+        <button class="add-btn" id="openModalBtn">+ أضف إعلانك</button>
     </nav>
 
     <div class="ads-grid" id="adsContainer">
@@ -34,8 +35,8 @@
         <div class="modal-content">
             <h3>نشر إعلان جديد</h3>
             <input type="text" id="titleInput" placeholder="عنوان الإعلان">
-            <input type="text" id="priceInput" placeholder="السعر (مثال: 50 دينار)">
-            <input type="text" id="imgInput" placeholder="رابط صورة الإعلان (URL)">
+            <input type="text" id="priceInput" placeholder="السعر">
+            <input type="text" id="imgInput" placeholder="رابط صورة الإعلان">
             <button class="add-btn" style="width: 100%;" id="saveBtn">نشر الآن</button>
             <button class="add-btn" style="width: 100%; background: #999; margin-top: 10px;" id="closeModalBtn">إلغاء</button>
         </div>
@@ -45,7 +46,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // إعدادات مشروعك الحقيقية التي أرسلتها في الصور
+        // بيانات مشروعك الحقيقي كما في الصورة
         const firebaseConfig = {
             apiKey: "AIzaSyDtYpqqEgrOXV_mEQFEfca15xdTUhcjhkK",
             authDomain: "jo-ads-86c29.firebaseapp.com",
@@ -56,16 +57,17 @@
             measurementId: "G-MMFSPJNK3W"
         };
 
+        // تهيئة Firebase
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const adsCol = collection(db, "ads");
 
-        // التحكم في فتح وإغلاق النافذة
+        // التحكم في النافذة
         const modal = document.getElementById('modal');
         document.getElementById('openModalBtn').onclick = () => modal.style.display = 'flex';
         document.getElementById('closeModalBtn').onclick = () => modal.style.display = 'none';
 
-        // وظيفة حفظ الإعلان في Firebase
+        // وظيفة حفظ الإعلان
         document.getElementById('saveBtn').onclick = async () => {
             const title = document.getElementById('titleInput').value;
             const price = document.getElementById('priceInput').value;
@@ -80,25 +82,25 @@
                         createdAt: new Date()
                     });
                     modal.style.display = 'none';
-                    alert("تم نشر إعلانك بنجاح!");
-                    // تنظيف الخانات
+                    alert("تم النشر بنجاح!");
+                    // تفريغ الخانات
                     document.getElementById('titleInput').value = "";
                     document.getElementById('priceInput').value = "";
                     document.getElementById('imgInput').value = "";
                 } catch (e) {
-                    alert("خطأ: تأكد من تفعيل Rules في Firebase إلى true");
-                    console.error("Error adding document: ", e);
+                    console.error("خطأ أثناء الإضافة: ", e);
+                    alert("حدث خطأ، يرجى المحاولة لاحقاً");
                 }
             } else {
-                alert("يرجى إكمال جميع الحقول");
+                alert("يرجى ملء جميع البيانات");
             }
         };
 
-        // وظيفة عرض الإعلانات تلقائياً عند أي تغيير
+        // عرض الإعلانات من السيرفر فور حدوث أي تغيير
         const q = query(adsCol, orderBy("createdAt", "desc"));
         onSnapshot(q, (snapshot) => {
             const container = document.getElementById('adsContainer');
-            container.innerHTML = ""; // مسح القائمة الحالية لتحديثها
+            container.innerHTML = ""; 
             snapshot.forEach((doc) => {
                 const ad = doc.data();
                 container.innerHTML += `
