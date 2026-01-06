@@ -3,75 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منصة الإعلانات العربية</title>
+    <title>منصتي الاحترافية للإعلانات</title>
     <style>
-        /* تصميم الموقع */
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: #f4f4f4; }
-        
-        /* القائمة العلوية */
-        nav { background: #333; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
-        nav a { color: white; text-decoration: none; margin: 0 10px; }
-
-        /* صندوق البحث */
-        .search-container { text-align: center; padding: 20px; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        input[type="text"] { width: 60%; padding: 10px; border-radius: 5px; border: 1px solid #ddd; }
-
-        /* قسم الإعلانات */
-        .ads-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; padding: 20px; }
-        .ad-card { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: 0.3s; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; background-color: #f0f2f5; }
+        nav { background: #1a73e8; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+        nav a { color: white; text-decoration: none; margin: 0 10px; font-weight: bold; }
+        .search-section { background: white; padding: 20px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        input { padding: 10px; border: 1px solid #ddd; border-radius: 5px; width: 60%; }
+        .ads-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 20px; }
+        .ad-card { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.3s; }
         .ad-card:hover { transform: translateY(-5px); }
-        .ad-card img { width: 100%; height: 150px; object-fit: cover; }
-        .ad-card h3 { padding: 10px; margin: 0; font-size: 18px; }
-        .ad-card p { padding: 0 10px 10px; color: #666; font-size: 14px; }
+        .ad-card img { width: 100%; height: 180px; object-fit: cover; }
+        .ad-card-content { padding: 15px; }
+        .price { color: #28a745; font-weight: bold; font-size: 1.2em; }
+        .add-btn { background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        
+        /* Modal Style */
+        #modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); justify-content:center; align-items:center; z-index:1000; }
+        .modal-content { background:white; padding:30px; border-radius:10px; width:90%; max-width:400px; }
+        .modal-content input { width: 100%; margin-bottom: 15px; box-sizing: border-box; }
     </style>
 </head>
 <body>
 
     <nav>
-        <div class="logo">شعار الموقع</div>
-        <div>
-            <a href="index.html">الرئيسية</a>
-            <a href="about.html">عن الموقع</a>
-            <a href="contact.html">اتصل بنا</a>
-        </div>
+        <div class="logo">منصة الإعلانات</div>
+        <button class="add-btn" onclick="document.getElementById('modal').style.display='flex'">+ أضف إعلان</button>
     </nav>
 
-    <div class="search-container">
-        <input type="text" id="searchInput" onkeyup="searchFunction()" placeholder="ابحث عن إعلان (مثلاً: سيارة، عقار)...">
+    <div class="search-section">
+        <input type="text" id="searchInput" placeholder="ابحث عن إعلانات...">
     </div>
 
-    <div class="ads-grid" id="adsGrid">
-        <div class="ads-grid" id="adsGrid">
-        
-        <div class="ad-card">
-            <img src="images/CAR.GPJ" alt="سيارة تويوتا">
-            <h3>سيارة تويوتا للبيع</h3>
-            <p>موديل 2022، بحالة ممتازة.</p>
+    <div class="ads-grid" id="adsContainer">
         </div>
 
-        <div class="ad-card">
-            <img src="images/house.png" alt="شقة للإيجار">
-            <h3>شقة فاخرة للإيجار</h3>
-            <p>في أرقى أحياء المدينة.</p>
+    <div id="modal">
+        <div class="modal-content">
+            <h3>نشر إعلان جديد</h3>
+            <input type="text" id="titleInput" placeholder="عنوان الإعلان">
+            <input type="text" id="priceInput" placeholder="السعر">
+            <input type="text" id="imgInput" placeholder="رابط صورة الإعلان">
+            <button class="add-btn" style="width:100%" id="saveBtn">نشر الآن</button>
+            <button onclick="document.getElementById('modal').style.display='none'" style="width:100%; margin-top:10px; background:#ccc; border:none; padding:10px; border-radius:5px; cursor:pointer;">إلغاء</button>
         </div>
-
     </div>
 
-    <script>
-        function searchFunction() {
-            let input = document.getElementById('searchInput').value.toUpperCase();
-            let grid = document.getElementById('adsGrid');
-            let cards = grid.getElementsByClassName('ad-card');
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-            for (let i = 0; i < cards.length; i++) {
-                let h3 = cards[i].getElementsByTagName('h3')[0];
-                if (h3.innerHTML.toUpperCase().indexOf(input) > -1) {
-                    cards[i].style.display = "";
-                } else {
-                    cards[i].style.display = "none";
-                }
+        // 1. ضع كود الـ Config الخاص بك هنا بدلاً من هذا القوس
+        const firebaseConfig = {
+           // Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyDtYpqqEgrOXV_mEQFEFca15xdTUhcjhKk",
+  authDomain: "jo-ads-86c29.firebaseapp.com",
+  projectId: "jo-ads-86c29",
+  storageBucket: "jo-ads-86c29.firebasestorage.app",
+  messagingSenderId: "379301641206",
+  appId: "1:379301641206:web:ef0afb32af0ce1986da5d7",
+  measurementId: "G-MMFSPJNK3W"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+        };
+
+        // 2. تهيئة التطبيق
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const adsCol = collection(db, "ads");
+
+        // 3. وظيفة حفظ الإعلان
+        document.getElementById('saveBtn').onclick = async () => {
+            const title = document.getElementById('titleInput').value;
+            const price = document.getElementById('priceInput').value;
+            const img = document.getElementById('imgInput').value;
+
+            if(title && price && img) {
+                await addDoc(adsCol, {
+                    title: title,
+                    price: price,
+                    img: img,
+                    createdAt: new Date()
+                });
+                document.getElementById('modal').style.display = 'none';
+                alert("تم النشر بنجاح!");
+            } else {
+                alert("يرجى ملء جميع الخانات");
             }
-        }
+        };
+
+        // 4. وظيفة جلب الإعلانات وعرضها (تتحدث تلقائياً)
+        const q = query(adsCol, orderBy("createdAt", "desc"));
+        onSnapshot(q, (snapshot) => {
+            const container = document.getElementById('adsContainer');
+            container.innerHTML = "";
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                container.innerHTML += `
+                    <div class="ad-card">
+                        <img src="${data.img}" alt="${data.title}">
+                        <div class="ad-card-content">
+                            <h3>${data.title}</h3>
+                            <p class="price">${data.price}</p>
+                        </div>
+                    </div>
+                `;
+            });
+        });
     </script>
 </body>
 </html>
