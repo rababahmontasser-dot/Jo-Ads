@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منصة الإعلانات العربية</title>
+    <style>
+        /* تصميم الموقع */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: #f4f4f4; }
+        
+        /* القائمة العلوية */
+        nav { background: #333; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        nav a { color: white; text-decoration: none; margin: 0 10px; }
+
+        /* صندوق البحث */
+        .search-container { text-align: center; padding: 20px; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        input[type="text"] { width: 60%; padding: 10px; border-radius: 5px; border: 1px solid #ddd; }
+
+        /* قسم الإعلانات */
+        .ads-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; padding: 20px; }
+        .ad-card { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: 0.3s; }
+        .ad-card:hover { transform: translateY(-5px); }
+        .ad-card img { width: 100%; height: 150px; object-fit: cover; }
+        .ad-card h3 { padding: 10px; margin: 0; font-size: 18px; }
+        .ad-card p { padding: 0 10px 10px; color: #666; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="logo">شعار الموقع</div>
+        <div>
+            <a href="index.html">الرئيسية</a>
+            <a href="about.html">عن الموقع</a>
+            <a href="contact.html">اتصل بنا</a>
+        </div>
+    </nav>
+
+    <div class="search-container">
+        <input type="text" id="searchInput" onkeyup="searchFunction()" placeholder="ابحث عن إعلان (مثلاً: سيارة، عقار)...">
+    </div>
+
+    <div class="ads-grid" id="adsGrid">
+        <div class="ads-grid" id="adsGrid">
+        
+        <div class="ad-card">
+            <img src="images/CAR.GPJ" alt="سيارة تويوتا">
+            <h3>سيارة تويوتا للبيع</h3>
+            <p>موديل 2022، بحالة ممتازة.</p>
+        </div>
+
+        <div class="ad-card">
+            <img src="images/house.png" alt="شقة للإيجار">
+            <h3>شقة فاخرة للإيجار</h3>
+            <p>في أرقى أحياء المدينة.</p>
+        </div>
+
+    </div>
+
+    <script>
+        function searchFunction() {
+            let input = document.getElementById('searchInput').value.toUpperCase();
+            let grid = document.getElementById('adsGrid');
+            let cards = grid.getElementsByClassName('ad-card');
+
+            for (let i = 0; i < cards.length; i++) {
+                let h3 = cards[i].getElementsByTagName('h3')[0];
+                if (h3.innerHTML.toUpperCase().indexOf(input) > -1) {
+                    cards[i].style.display = "";
+                } else {
+                    cards[i].style.display = "none";
+                }
+            }
+        }
+    </script>
+</body>
+</html>

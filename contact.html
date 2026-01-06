@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>اتصل بنا</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f4f4f4; padding: 20px; }
+        nav { background: #333; padding: 15px; text-align: center; margin-bottom: 20px; }
+        nav a { color: white; text-decoration: none; margin: 0 15px; }
+        form { background: white; padding: 20px; max-width: 400px; margin: auto; border-radius: 8px; }
+        input, textarea { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; box-sizing: border-box; }
+        button { background: #28a745; color: white; border: none; padding: 10px 20px; width: 100%; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="index.html">الرئيسية</a>
+        <a href="about.html">عن الموقع</a>
+        <a href="contact.html">اتصل بنا</a>
+    </nav>
+
+    <form>
+        <h2>أرسل لنا رسالة</h2>
+        <input type="text" placeholder="اسمك الكامل">
+        <input type="email" placeholder="بريدك الإلكتروني">
+        <textarea placeholder="كيف يمكننا مساعدتك؟" rows="5"></textarea>
+        <button type="button" onclick="alert('شكراً لرسالتك! سنتواصل معك قريباً.')">إرسال</button>
+    </form>
+</body>
+</html>
