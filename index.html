@@ -3,37 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منصتي الاحترافية للإعلانات</title>
+    <title>منصة إعلاناتي - النسخة المتصلة بالسيرفر</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; background-color: #f0f2f5; }
-        nav { background: #1a73e8; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
-        nav a { color: white; text-decoration: none; margin: 0 10px; font-weight: bold; }
-        .search-section { background: white; padding: 20px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        input { padding: 10px; border: 1px solid #ddd; border-radius: 5px; width: 60%; }
-        .ads-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 20px; }
-        .ad-card { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.3s; }
-        .ad-card:hover { transform: translateY(-5px); }
-        .ad-card img { width: 100%; height: 180px; object-fit: cover; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; background-color: #f4f7f6; }
+        nav { background: #1a73e8; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
+        .add-btn { background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .ads-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; padding: 20px; }
+        .ad-card { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .ad-card img { width: 100%; height: 160px; object-fit: cover; background: #ddd; }
         .ad-card-content { padding: 15px; }
-        .price { color: #28a745; font-weight: bold; font-size: 1.2em; }
-        .add-btn { background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        .price { color: #28a745; font-weight: bold; }
         
-        /* Modal Style */
-        #modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); justify-content:center; align-items:center; z-index:1000; }
-        .modal-content { background:white; padding:30px; border-radius:10px; width:90%; max-width:400px; }
-        .modal-content input { width: 100%; margin-bottom: 15px; box-sizing: border-box; }
+        /* نافذة الإضافة */
+        #modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); justify-content:center; align-items:center; z-index:2000; }
+        .modal-content { background:white; padding:25px; border-radius:10px; width:90%; max-width:400px; }
+        .modal-content input { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
     </style>
 </head>
 <body>
 
     <nav>
-        <div class="logo">منصة الإعلانات</div>
-        <button class="add-btn" onclick="document.getElementById('modal').style.display='flex'">+ أضف إعلان</button>
+        <div style="font-size: 20px; font-weight: bold;">منصة الإعلانات</div>
+        <button class="add-btn" id="openModalBtn"> + أضف إعلانك </button>
     </nav>
-
-    <div class="search-section">
-        <input type="text" id="searchInput" placeholder="ابحث عن إعلانات...">
-    </div>
 
     <div class="ads-grid" id="adsContainer">
         </div>
@@ -42,10 +34,10 @@
         <div class="modal-content">
             <h3>نشر إعلان جديد</h3>
             <input type="text" id="titleInput" placeholder="عنوان الإعلان">
-            <input type="text" id="priceInput" placeholder="السعر">
-            <input type="text" id="imgInput" placeholder="رابط صورة الإعلان">
-            <button class="add-btn" style="width:100%" id="saveBtn">نشر الآن</button>
-            <button onclick="document.getElementById('modal').style.display='none'" style="width:100%; margin-top:10px; background:#ccc; border:none; padding:10px; border-radius:5px; cursor:pointer;">إلغاء</button>
+            <input type="text" id="priceInput" placeholder="السعر (مثال: 50 دينار)">
+            <input type="text" id="imgInput" placeholder="رابط صورة الإعلان (URL)">
+            <button class="add-btn" style="width: 100%;" id="saveBtn">نشر الآن</button>
+            <button class="add-btn" style="width: 100%; background: #999; margin-top: 10px;" id="closeModalBtn">إلغاء</button>
         </div>
     </div>
 
@@ -53,55 +45,68 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // 1. ضع كود الـ Config الخاص بك هنا بدلاً من هذا القوس
+        // إعدادات مشروعك الحقيقية التي أرسلتها في الصور
         const firebaseConfig = {
-             apiKey: "AIzaSyDtYpqqEgrOXV_mEQFEFca15xdTUhcjhKk",
-  authDomain: "jo-ads-86c29.firebaseapp.com",
-  projectId: "jo-ads-86c29",
-  storageBucket: "jo-ads-86c29.firebasestorage.app",
-  messagingSenderId: "379301641206",
-  appId: "1:379301641206:web:ef0afb32af0ce1986da5d7",
-  measurementId: "G-MMFSPJNK3W"
+            apiKey: "AIzaSyDtYpqqEgrOXV_mEQFEfca15xdTUhcjhkK",
+            authDomain: "jo-ads-86c29.firebaseapp.com",
+            projectId: "jo-ads-86c29",
+            storageBucket: "jo-ads-86c29.firebasestorage.app",
+            messagingSenderId: "379301641206",
+            appId: "1:379301641206:web:ef0afb32af0ce1986da5d7",
+            measurementId: "G-MMFSPJNK3W"
         };
 
-        // 2. تهيئة التطبيق
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const adsCol = collection(db, "ads");
 
-        // 3. وظيفة حفظ الإعلان
+        // التحكم في فتح وإغلاق النافذة
+        const modal = document.getElementById('modal');
+        document.getElementById('openModalBtn').onclick = () => modal.style.display = 'flex';
+        document.getElementById('closeModalBtn').onclick = () => modal.style.display = 'none';
+
+        // وظيفة حفظ الإعلان في Firebase
         document.getElementById('saveBtn').onclick = async () => {
             const title = document.getElementById('titleInput').value;
             const price = document.getElementById('priceInput').value;
             const img = document.getElementById('imgInput').value;
 
-            if(title && price && img) {
-                await addDoc(adsCol, {
-                    title: title,
-                    price: price,
-                    img: img,
-                    createdAt: new Date()
-                });
-                document.getElementById('modal').style.display = 'none';
-                alert("تم النشر بنجاح!");
+            if (title && price && img) {
+                try {
+                    await addDoc(adsCol, {
+                        title: title,
+                        price: price,
+                        img: img,
+                        createdAt: new Date()
+                    });
+                    modal.style.display = 'none';
+                    alert("تم نشر إعلانك بنجاح!");
+                    // تنظيف الخانات
+                    document.getElementById('titleInput').value = "";
+                    document.getElementById('priceInput').value = "";
+                    document.getElementById('imgInput').value = "";
+                } catch (e) {
+                    alert("خطأ: تأكد من تفعيل Rules في Firebase إلى true");
+                    console.error("Error adding document: ", e);
+                }
             } else {
-                alert("يرجى ملء جميع الخانات");
+                alert("يرجى إكمال جميع الحقول");
             }
         };
 
-        // 4. وظيفة جلب الإعلانات وعرضها (تتحدث تلقائياً)
+        // وظيفة عرض الإعلانات تلقائياً عند أي تغيير
         const q = query(adsCol, orderBy("createdAt", "desc"));
         onSnapshot(q, (snapshot) => {
             const container = document.getElementById('adsContainer');
-            container.innerHTML = "";
+            container.innerHTML = ""; // مسح القائمة الحالية لتحديثها
             snapshot.forEach((doc) => {
-                const data = doc.data();
+                const ad = doc.data();
                 container.innerHTML += `
                     <div class="ad-card">
-                        <img src="${data.img}" alt="${data.title}">
+                        <img src="${ad.img}" onerror="this.src='https://via.placeholder.com/250x160?text=الصورة+غير+صالحة'">
                         <div class="ad-card-content">
-                            <h3>${data.title}</h3>
-                            <p class="price">${data.price}</p>
+                            <h3>${ad.title}</h3>
+                            <p class="price">${ad.price}</p>
                         </div>
                     </div>
                 `;
