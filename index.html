@@ -2,45 +2,173 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>اختبار النظام</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إعلانات الأردن - النسخة المعتمدة</title>
     <style>
-        .cat-btn { padding: 20px; margin: 10px; cursor: pointer; background: #eee; border: 1px solid #000; }
-        .ads-grid { padding: 20px; border: 2px dashed #ccc; min-height: 100px; }
+        :root { --primary: #1a73e8; --secondary: #28a745; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; background-color: #f0f2f5; }
+        nav { background: var(--primary); color: white; padding: 20px; text-align: center; font-size: 1.8rem; font-weight: bold; }
+        .categories { display: flex; justify-content: center; gap: 10px; padding: 25px 10px; flex-wrap: wrap; background: #fff; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .cat-btn { background: white; border: 2px solid var(--primary); color: var(--primary); padding: 10px 25px; border-radius: 30px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .cat-btn.active { background: var(--primary); color: white; }
+        .ads-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 20px; max-width: 1200px; margin: auto; }
+        .ad-card { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
+        .ad-card img { width: 100%; height: 200px; object-fit: cover; background: #eee; }
+        .ad-card-content { padding: 15px; }
+        .welcome-msg { grid-column: 1/-1; text-align: center; padding: 80px 20px; color: #555; }
+        #adminPanel { display: none; position: fixed; bottom: 30px; left: 30px; z-index: 1000; }
+        .admin-btn { background: #333; color: white; border: none; width: 60px; height: 60px; border-radius: 50%; cursor: pointer; font-size: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        #modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); justify-content:center; align-items:center; z-index:2000; }
+        .modal-content { background:white; padding:30px; border-radius:20px; width:90%; max-width:400px; }
+        input, select { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
     </style>
 </head>
 <body>
 
-    <h2>اختبار الأزرار ووضع الإدارة</h2>
-    <p>1. اضغط على الأزرار (سيارات، عقارات) وتأكد هل تظهر رسالة تنبيه؟</p>
-    <p>2. اضغط Enter على الكيبورد، هل تطلب كلمة سر؟</p>
+    <nav>Jo Ads - الأردن</nav>
 
     <div class="categories">
-        <button class="cat-btn" id="btnCars">سيارات</button>
-        <button class="cat-btn" id="btnReal">عقارات</button>
+        <button class="cat-btn active" id="btn-home">الرئيسية</button>
+        <button class="cat-btn" id="btn-cars">سيارات</button>
+        <button class="cat-btn" id="btn-houses">عقارات</button>
     </div>
 
-    <div id="adsContainer" class="ads-grid">الإعلانات ستظهر هنا...</div>
+    <div class="ads-grid" id="adsContainer"></div>
+
+    <div id="adminPanel">
+        <button class="admin-btn" id="openModal">+</button>
+    </div>
+
+    <div id="modal">
+        <div class="modal-content">
+            <h3 style="text-align:center">إضافة إعلان جديد</h3>
+            <input type="text" id="tInput" placeholder="العنوان">
+            <input type="text" id="pInput" placeholder="السعر">
+            <input type="file" id="fInput" accept="image/*">
+            <select id="cInput">
+                <option value="سيارات">سيارات</option>
+                <option value="عقارات">عقارات</option>
+            </select>
+            <button class="cat-btn" style="width:100%; background:var(--secondary); color:white; border:none; margin-top:10px;" id="saveBtn">نشر الإعلان</button>
+            <button id="closeModal" style="width:100%; margin-top:10px; border:none; background:none; cursor:pointer; color:#888;">إلغاء</button>
+        </div>
+    </div>
 
     <script type="module">
-        // وظيفة لاختبار الأزرار
-        document.getElementById('btnCars').onclick = function() {
-            alert("تم الضغط على زر سيارات!");
-            document.getElementById('adsContainer').innerHTML = "جاري محاولة تحميل السيارات...";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, where, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDtYpqqEgrOXV_mEQFEfca15xdTUhcjhkK",
+            authDomain: "jo-ads-86c29.firebaseapp.com",
+            projectId: "jo-ads-86c29",
+            storageBucket: "jo-ads-86c29.firebasestorage.app",
+            messagingSenderId: "379301641206",
+            appId: "1:379301641206:web:ef0afb32af0ce1986da5d7"
         };
 
-        document.getElementById('btnReal').onclick = function() {
-            alert("تم الضغط على زر عقارات!");
-            document.getElementById('adsContainer').innerHTML = "جاري محاولة تحميل العقارات...";
-        };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
+        let currentCategory = "الرئيسية";
+        let isAdmin = false;
+        const container = document.getElementById('adsContainer');
 
-        // وظيفة لاختبار زر Enter
-        window.addEventListener('keydown', function(e) {
+        // وظيفة تحميل الإعلانات المحدثة
+        function loadAds() {
+            if (currentCategory === "الرئيسية") {
+                container.innerHTML = <div class="welcome-msg"><h2>أهلاً بك في Jo Ads</h2><p>اختر قسماً من الأعلى لمشاهدة الإعلانات</p></div>;
+                return;
+            }
+
+            // ملاحظة: تم حذف OrderBy مؤقتاً لضمان عدم حدوث خطأ في قاعدة البيانات
+            const q = query(collection(db, "ads"), where("category", "==", currentCategory));
+
+            onSnapshot(q, (snapshot) => {
+                container.innerHTML = "";
+                if (snapshot.empty) {
+                    container.innerHTML = <div class="welcome-msg"><p>لا توجد إعلانات في قسم ${currentCategory} حالياً</p></div>;
+                    return;
+                }
+                snapshot.forEach((snap) => {
+                    const ad = snap.data();
+                    const id = snap.id;
+                    const card = document.createElement('div');
+                    card.className = 'ad-card';
+                    card.innerHTML = `
+                        <img src="${ad.img}" onerror="this.src='https://via.placeholder.com/400x300'">
+                        <div class="ad-card-content">
+                            <span style="color:green; font-weight:bold; font-size:1.2rem;">${ad.price}</span>
+                            <h3 style="margin:5px 0;">${ad.title}</h3>
+                            ${isAdmin ? <button class="del-btn" data-id="${id}" style="background:red; color:white; border:none; padding:8px; width:100%; border-radius:8px; cursor:pointer; font-weight:bold; margin-top:10px;">حذف 🗑️</button> : ''}
+                        </div>`;
+                    container.appendChild(card);
+                });
+
+                // تفعيل أزرار الحذف بعد الرسم
+                document.querySelectorAll('.del-btn').forEach(btn => {
+                    btn.onclick = async () => {
+                        if(confirm("هل تريد الحذف؟")) await deleteDoc(doc(db, "ads", btn.getAttribute('data-id')));
+                    }
+                });
+            });
+        }
+
+        // ربط أزرار الأقسام (حل مشكلة عدم الاستجابة)
+        document.getElementById('btn-home').onclick = () => { setActive('btn-home', 'الرئيسية'); };
+        document.getElementById('btn-cars').onclick = () => { setActive('btn-cars', 'سيارات'); };
+        document.getElementById('btn-houses').onclick = () => { setActive('btn-houses', 'عقارات'); };
+
+        function setActive(btnId, cat) {
+            document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(btnId).classList.add('active');
+            currentCategory = cat;
+            loadAds();
+        }
+
+        // وضع الإدارة (Enter)
+        window.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
-                alert("لقد ضغطت Enter!");
-                let p = prompt("اكتب كلمة السر:");
-                if(p === "123") alert("كلمة سر صحيحة");
+                const pass = prompt("كلمة السر:");
+                if (pass === "admin123") {
+                    isAdmin = true;
+                    document.getElementById('adminPanel').style.display = 'block';
+                    loadAds();
+                    alert("تم تفعيل وضع الإدارة ✅");
+                }
             }
         });
+
+        // التحكم في المودال والرفع
+        document.getElementById('openModal').onclick = () => { document.getElementById('modal').style.display = 'flex'; };
+        document.getElementById('closeModal').onclick = () => { document.getElementById('modal').style.display = 'none'; };
+
+        document.getElementById('saveBtn').onclick = async () => {
+            const file = document.getElementById('fInput').files[0];
+            const title = document.getElementById('tInput').value;
+            const price = document.getElementById('pInput').value;
+            const cat = document.getElementById('cInput').value;
+
+            if(!file || !title) return alert("أكمل البيانات");
+            
+            document.getElementById('saveBtn').innerText = "جاري الرفع...";
+            const fd = new FormData();
+            fd.append("file", file);
+            fd.append("upload_preset", "ml_default");
+
+            try {
+                const res = await fetch("https://api.cloudinary.com/v1_1/dnm9qjjdg/image/upload", { method: "POST", body: fd });
+                const data = await res.json();
+                if(data.secure_url) {
+                    await addDoc(collection(db, "ads"), { title, price, category: cat, img: data.secure_url, createdAt: new Date() });
+                    alert("تم النشر!");
+                    location.reload();
+                }
+            } catch (e) { alert("خطأ في الرفع"); }
+        };
+
+        // البدء بالتحميل
+        loadAds();
     </script>
 </body>
 </html>
