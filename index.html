@@ -2,33 +2,62 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>إعلانات الأردن</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jo Ads - النسخة الكاملة</title>
     <style>
-        body { font-family: sans-serif; margin: 0; background: #f0f2f5; text-align: center; }
-        nav { background: #1a73e8; color: white; padding: 20px; font-size: 24px; }
-        .categories { padding: 20px; background: white; border-bottom: 1px solid #ddd; }
-        .cat-btn { padding: 10px 20px; margin: 5px; cursor: pointer; border: 2px solid #1a73e8; background: white; color: #1a73e8; border-radius: 20px; font-weight: bold; }
-        .cat-btn.active { background: #1a73e8; color: white; }
-        .ads-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; padding: 20px; }
-        .card { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .card img { width: 100%; height: 150px; object-fit: cover; border-radius: 5px; }
+        :root { --primary: #1a73e8; --secondary: #28a745; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; background-color: #f0f2f5; }
+        nav { background: var(--primary); color: white; padding: 20px; text-align: center; font-size: 1.8rem; font-weight: bold; }
+        .categories { display: flex; justify-content: center; gap: 10px; padding: 20px; background: #fff; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .cat-btn { background: white; border: 2px solid var(--primary); color: var(--primary); padding: 10px 25px; border-radius: 30px; cursor: pointer; font-weight: bold; }
+        .cat-btn.active { background: var(--primary); color: white; }
+        .ads-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 20px; max-width: 1200px; margin: auto; }
+        .ad-card { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
+        .ad-card img { width: 100%; height: 200px; object-fit: cover; background: #eee; }
+        .ad-card-content { padding: 15px; }
+        #adminPanel { display: none; position: fixed; bottom: 30px; left: 30px; z-index: 1000; }
+        .admin-btn { background: #333; color: white; border: none; width: 60px; height: 60px; border-radius: 50%; cursor: pointer; font-size: 30px; }
+        #modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); justify-content:center; align-items:center; z-index:2000; }
+        .modal-content { background:white; padding:25px; border-radius:15px; width:90%; max-width:400px; }
+        input, select { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        .welcome-msg { grid-column: 1/-1; text-align: center; padding: 80px 20px; color: #555; }
     </style>
 </head>
 <body>
 
-    <nav>Jo Ads</nav>
+    <nav>Jo Ads - منصة الأردن</nav>
 
     <div class="categories">
-        <button class="cat-btn active" id="btnHome">الرئيسية</button>
-        <button class="cat-btn" id="btnCars">سيارات</button>
-        <button class="cat-btn" id="btnReal">عقارات</button>
+        <button class="cat-btn active" id="btn-home">الرئيسية</button>
+        <button class="cat-btn" id="btn-cars">سيارات</button>
+        <button class="cat-btn" id="btn-houses">عقارات</button>
     </div>
 
     <div id="adsContainer" class="ads-grid"></div>
 
+    <div id="adminPanel">
+        <button class="admin-btn" id="openModal">+</button>
+    </div>
+
+    <div id="modal">
+        <div class="modal-content">
+            <h3 style="text-align:center">إضافة إعلان جديد</h3>
+            <input type="text" id="tInput" placeholder="عنوان الإعلان">
+            <input type="text" id="pInput" placeholder="السعر (مثلاً: 5000 دينار)">
+            <input type="number" id="phoneInput" placeholder="رقم الواتساب (مثلاً 079...)">
+            <input type="file" id="fInput" accept="image/*">
+            <select id="cInput">
+                <option value="سيارات">سيارات</option>
+                <option value="عقارات">عقارات</option>
+            </select>
+            <button class="cat-btn" style="width:100%; background:var(--secondary); color:white; border:none; margin-top:10px;" id="saveBtn">نشر الإعلان</button>
+            <button id="closeModal" style="width:100%; margin-top:10px; border:none; background:none; cursor:pointer; color:#888;">إلغاء</button>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, where, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDtYpqqEgrOXV_mEQFEfca15xdTUhcjhkK",
@@ -41,46 +70,109 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        
+        let currentCategory = "الرئيسية";
+        let isAdmin = false;
         const container = document.getElementById('adsContainer');
 
-        function showAds(category) {
-            // تحديث الأزرار
-            document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
-            
-            if (category === "الرئيسية") {
-                container.innerHTML = "<h2>أهلاً بك.. اختر قسماً</h2>";
+        // وظيفة عرض الإعلانات
+        function loadAds() {
+            if (currentCategory === "الرئيسية") {
+                container.innerHTML = <div class="welcome-msg"><h2>أهلاً بك في Jo Ads</h2><p>اختر قسماً من الأعلى لمشاهدة الإعلانات</p></div>;
                 return;
             }
 
-            // جلب البيانات بدون "OrderBy" (هذا هو السر ليعمل فوراً)
-            const q = query(collection(db, "ads"), where("category", "==", category));
+            const q = query(collection(db, "ads"), where("category", "==", currentCategory));
 
             onSnapshot(q, (snapshot) => {
                 container.innerHTML = "";
                 if (snapshot.empty) {
-                    container.innerHTML = "لا توجد إعلانات حالياً في " + category;
+                    container.innerHTML = <div class="welcome-msg"><p>لا توجد إعلانات في قسم ${currentCategory} حالياً</p></div>;
+                    return;
                 }
-                snapshot.forEach((doc) => {
-                    const ad = doc.data();
-                    container.innerHTML += `
-                        <div class="card">
-                            <img src="${ad.img}">
-                            <h3>${ad.title}</h3>
-                            <p style="color:green">${ad.price}</p>
+                snapshot.forEach((snap) => {
+                    const ad = snap.data();
+                    const id = snap.id;
+                    const card = document.createElement('div');
+                    card.className = 'ad-card';
+                    card.innerHTML = `
+                        <img src="${ad.img}" onerror="this.src='https://via.placeholder.com/400x300'">
+                        <div class="ad-card-content">
+                            <span style="color:green; font-weight:bold; font-size:1.2rem;">${ad.price}</span>
+                            <h3 style="margin:5px 0;">${ad.title}</h3>
+                            <a href="https://wa.me/962${ad.phone || ''}" target="_blank" 
+                               style="display: block; background: #25D366; color: white; text-align: center; padding: 10px; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 10px;">
+                               تواصل عبر الواتساب ✅
+                            </a>
+                            ${isAdmin ? <button class="del-btn" data-id="${id}" style="background:red; color:white; border:none; padding:8px; width:100%; border-radius:8px; cursor:pointer; font-weight:bold; margin-top:10px;">حذف 🗑️</button> : ''}
                         </div>`;
+                    container.appendChild(card);
                 });
-            }, (error) => {
-                alert("خطأ في جلب البيانات: " + error.message);
+
+                document.querySelectorAll('.del-btn').forEach(btn => {
+                    btn.onclick = async () => {
+                        if(confirm("حذف الإعلان؟")) await deleteDoc(doc(db, "ads", btn.getAttribute('data-id')));
+                    };
+                });
             });
         }
 
-        // ربط الأزرار
-        document.getElementById('btnHome').onclick = () => { showAds('الرئيسية'); document.getElementById('btnHome').classList.add('active'); };
-        document.getElementById('btnCars').onclick = () => { showAds('سيارات'); document.getElementById('btnCars').classList.add('active'); };
-        document.getElementById('btnReal').onclick = () => { showAds('عقارات'); document.getElementById('btnReal').classList.add('active'); };
+        // --- التحكم في الأزرار ---
+        document.getElementById('btn-home').onclick = () => { switchCat('btn-home', 'الرئيسية'); };
+        document.getElementById('btn-cars').onclick = () => { switchCat('btn-cars', 'سيارات'); };
+        document.getElementById('btn-houses').onclick = () => { switchCat('btn-houses', 'عقارات'); };
 
-        // البداية
-        showAds('الرئيسية');
+        function switchCat(id, cat) {
+            document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            currentCategory = cat;
+            loadAds();
+        }
+
+        // --- نظام الإدارة المطور ---
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const pass = prompt("كلمة سر الإدارة:");
+                if (pass === "admin123") {
+                    isAdmin = true;
+                    document.getElementById('adminPanel').style.display = 'block';
+                    loadAds();
+                    alert("وضع الإدارة نشط ✅");
+                } else {
+                    alert("كلمة سر خاطئة!");
+                }
+            }
+        });
+
+        document.getElementById('openModal').onclick = () => { document.getElementById('modal').style.display = 'flex'; };
+        document.getElementById('closeModal').onclick = () => { document.getElementById('modal').style.display = 'none'; };
+
+        document.getElementById('saveBtn').onclick = async () => {
+            const file = document.getElementById('fInput').files[0];
+            const title = document.getElementById('tInput').value;
+            const price = document.getElementById('pInput').value;
+            const phone = document.getElementById('phoneInput').value;
+            const cat = document.getElementById('cInput').value;
+
+            if(!file || !title || !phone) return alert("يرجى تعبئة كافة الحقول");
+            
+            document.getElementById('saveBtn').innerText = "جاري الرفع...";
+            const fd = new FormData();
+            fd.append("file", file);
+            fd.append("upload_preset", "ml_default");
+
+            try {
+                const res = await fetch("https://api.cloudinary.com/v1_1/dnm9qjjdg/image/upload", { method: "POST", body: fd });
+                const data = await res.json();
+                if(data.secure_url) {
+                    await addDoc(collection(db, "ads"), { title, price, phone, category: cat, img: data.secure_url, createdAt: new Date() });
+                    alert("تم النشر بنجاح!");
+                    location.reload();
+                }
+            } catch (e) { alert("حدث خطأ في الرفع"); }
+        };
+
+        loadAds();
     </script>
 </body>
 </html>
