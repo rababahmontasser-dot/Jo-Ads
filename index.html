@@ -2,32 +2,64 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>Jo Ads - اختبار الاتصال المباشر</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jo Ads - النسخة النهائية المستقرة</title>
     <style>
-        body { font-family: sans-serif; background: #f4f4f4; text-align: center; margin: 0; }
-        .nav { background: #1a73e8; color: white; padding: 15px; font-size: 20px; }
-        .tabs { padding: 15px; background: white; }
-        .btn { padding: 10px 20px; cursor: pointer; border: 1px solid #1a73e8; background: white; }
-        .btn.active { background: #1a73e8; color: white; }
-        .ads-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; padding: 20px; }
-        .ad-item { background: white; border-radius: 8px; width: 250px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); overflow: hidden; }
-        .ad-item img { width: 100%; height: 150px; object-fit: cover; }
+        :root { --primary: #1a73e8; --secondary: #28a745; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f0f2f5; }
+        nav { background: var(--primary); color: white; padding: 20px; text-align: center; font-weight: bold; font-size: 1.6rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .tabs { display: flex; justify-content: center; gap: 10px; padding: 20px; background: white; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .tab-btn { padding: 10px 25px; border-radius: 25px; border: 2px solid var(--primary); background: white; color: var(--primary); cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .tab-btn.active { background: var(--primary); color: white; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 20px; max-width: 1200px; margin: auto; }
+        .card { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08); transition: transform 0.2s; }
+        .card:hover { transform: translateY(-5px); }
+        .card img { width: 100%; height: 200px; object-fit: cover; background: #eee; }
+        .card-info { padding: 15px; text-align: right; }
+        .price { color: var(--secondary); font-size: 1.3rem; font-weight: bold; display: block; margin-bottom: 5px; }
+        #adminArea { display: none; position: fixed; bottom: 30px; left: 30px; z-index: 1001; }
+        .fab { width: 60px; height: 60px; border-radius: 50%; background: #333; color: white; border: none; font-size: 30px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        #overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); justify-content:center; align-items:center; z-index:2000; padding:10px; }
+        .form-card { background:white; padding:25px; border-radius:20px; width:100%; max-width:400px; }
+        input, select { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 1rem; }
+        .welcome { grid-column: 1/-1; text-align: center; padding: 100px 20px; color: #777; }
     </style>
 </head>
 <body>
 
-    <div class="nav">Jo Ads - جاري فحص الاتصال...</div>
-    
+    <nav>Jo Ads - الأردن</nav>
+
     <div class="tabs">
-        <button class="btn" id="goCars">عرض السيارات</button>
-        <button class="btn" id="goReal">عرض العقارات</button>
+        <button class="tab-btn active" id="goHome">الرئيسية</button>
+        <button class="tab-btn" id="goCars">سيارات</button>
+        <button class="tab-btn" id="goReal">عقارات</button>
     </div>
 
-    <div id="displayArea" class="ads-list">سيظهر هنا أي شيء موجود في قاعدة البيانات...</div>
+    <div id="display" class="grid"></div>
+
+    <div id="adminArea">
+        <button class="fab" id="openForm">+</button>
+    </div>
+
+    <div id="overlay">
+        <div class="form-card">
+            <h3 style="text-align:center; margin-top:0;">إضافة إعلان جديد</h3>
+            <input type="text" id="titleInp" placeholder="عنوان الإعلان">
+            <input type="text" id="priceInp" placeholder="السعر (مثال: 5000 دينار)">
+            <input type="number" id="waInp" placeholder="رقم الواتساب (079...)">
+            <input type="file" id="fileInp" accept="image/*">
+            <select id="catInp">
+                <option value="سيارات">سيارات</option>
+                <option value="عقارات">عقارات</option>
+            </select>
+            <button id="submitBtn" style="width:100%; background:var(--secondary); color:white; padding:12px; border:none; border-radius:10px; cursor:pointer; font-weight:bold; font-size:1.1rem;">نشر الآن</button>
+            <button id="closeForm" style="width:100%; border:none; background:none; margin-top:10px; cursor:pointer; color:#888;">إلغاء</button>
+        </div>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDtYpqqEgrOXV_mEQFEfca15xdTUhcjhkK",
@@ -40,44 +72,104 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        
+        let activeTab = "الرئيسية";
+        let isAdminMode = false;
+        const displayEl = document.getElementById('display');
 
-        // وظيفة جلب "كل شيء" بدون استثناء
-        function getAllData() {
-            const adsCol = collection(db, "ads");
-            
-            onSnapshot(adsCol, (snapshot) => {
-                const area = document.getElementById('displayArea');
-                area.innerHTML = "";
-                
-                if (snapshot.empty) {
-                    area.innerHTML = "قاعدة البيانات فارغة تماماً! لم يتم العثور على أي مستند.";
+        // جلب البيانات مع فلترة برمجية (تضمن العمل الفوري)
+        const loadContent = () => {
+            if (activeTab === "الرئيسية") {
+                displayEl.innerHTML = <div class="welcome"><h2>مرحباً بك في Jo Ads</h2><p>اختر قسماً من الأعلى لتصفح الإعلانات</p></div>;
+                return;
+            }
+
+            onSnapshot(collection(db, "ads"), (snapshot) => {
+                displayEl.innerHTML = "";
+                const filtered = snapshot.docs.filter(d => d.data().category === activeTab);
+
+                if (filtered.length === 0) {
+                    displayEl.innerHTML = <div class="welcome"><p>لا توجد إعلانات في قسم ${activeTab} حالياً</p></div>;
                     return;
                 }
 
-                snapshot.forEach((doc) => {
-                    const data = doc.data();
-                    area.innerHTML += `
-                        <div class="ad-item">
-                            <img src="${data.img}">
-                            <div style="padding:10px">
-                                <h3>${data.title}</h3>
-                                <p style="color:blue">${data.category}</p>
-                            </div>
+                filtered.forEach((sDoc) => {
+                    const ad = sDoc.data();
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.innerHTML = `
+                        <img src="${ad.img}" onerror="this.src='https://via.placeholder.com/400x300'">
+                        <div class="card-info">
+                            <span class="price">${ad.price}</span>
+                            <h3 style="margin:0 0 10px 0;">${ad.title}</h3>
+                            <a href="https://wa.me/962${ad.phone}" target="_blank" style="text-decoration:none;">
+                                <button style="width:100%; background:#25D366; color:white; border:none; padding:10px; border-radius:8px; cursor:pointer; font-weight:bold;">واتساب ✅</button>
+                            </a>
                         </div>`;
+                    
+                    if(isAdminMode) {
+                        const del = document.createElement('button');
+                        del.innerText = "حذف الإعلان 🗑️";
+                        del.style = "background:#ff4d4d; color:white; border:none; width:90%; margin:0 5% 15px 5%; padding:8px; border-radius:8px; cursor:pointer; font-weight:bold;";
+                        del.onclick = async () => { if(confirm("هل أنت متأكد؟")) await deleteDoc(doc(db, "ads", sDoc.id)); };
+                        card.appendChild(del);
+                    }
+                    displayEl.appendChild(card);
                 });
-                alert("نجح الاتصال! تم العثور على " + snapshot.size + " إعلانات.");
-            }, (error) => {
-                alert("فشل Firebase: " + error.message);
-                console.error(error);
             });
-        }
+        };
 
-        // ربط الأزرار لتشغيل الجلب
-        document.getElementById('goCars').onclick = () => { getAllData(); };
-        document.getElementById('goReal').onclick = () => { getAllData(); };
+        // إدارة التنقل
+        const updateUI = (id, cat) => {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            activeTab = cat;
+            loadContent();
+        };
 
-        // محاولة جلب تلقائي عند الفتح
-        getAllData();
+        document.getElementById('goHome').onclick = () => updateUI('goHome', 'الرئيسية');
+        document.getElementById('goCars').onclick = () => updateUI('goCars', 'سيارات');
+        document.getElementById('goReal').onclick = () => updateUI('goReal', 'عقارات');
+
+        // تفعيل المسؤول (Enter)
+        window.onkeydown = (e) => {
+            if (e.key === 'Enter') {
+                const p = prompt("كلمة السر:");
+                if (p === "admin123") {
+                    isAdminMode = true;
+                    document.getElementById('adminArea').style.display = 'block';
+                    loadContent();
+                    alert("تم تفعيل وضع المسؤول ✅");
+                }
+            }
+        };
+
+        document.getElementById('openForm').onclick = () => document.getElementById('overlay').style.display='flex';
+        document.getElementById('closeForm').onclick = () => document.getElementById('overlay').style.display='none';
+
+        document.getElementById('submitBtn').onclick = async () => {
+            const f = document.getElementById('fileInp').files[0];
+            const t = document.getElementById('titleInp').value;
+            const p = document.getElementById('priceInp').value;
+            const w = document.getElementById('waInp').value;
+            const c = document.getElementById('catInp').value;
+
+            if(!f || !t || !w) return alert("يرجى إكمال البيانات");
+            
+            document.getElementById('submitBtn').innerText = "جاري الرفع...";
+            const fd = new FormData();
+            fd.append("file", f); fd.append("upload_preset", "ml_default");
+
+            try {
+                const res = await fetch("https://api.cloudinary.com/v1_1/dnm9qjjdg/image/upload", { method: "POST", body: fd });
+                const data = await res.json();
+                await addDoc(collection(db, "ads"), { title: t, price: p, phone: w, category: c, img: data.secure_url, createdAt: new Date() });
+                alert("تم النشر!");
+                location.reload();
+            } catch (e) { alert("حدث خطأ!"); }
+        };
+
+        loadContent();
     </script>
 </body>
 </html>
