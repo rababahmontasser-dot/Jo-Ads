@@ -3,117 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منصة إعلانات الأردن</title>
+    <title>منصة إعلانات الأردن - الأقسام</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; background-color: #f4f7f6; }
-        nav { background: #1a73e8; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
-        .add-btn { background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .ads-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; padding: 20px; }
-        .ad-card { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .ad-card img { width: 100%; height: 160px; object-fit: cover; background: #ddd; }
-        .ad-card-content { padding: 15px; }
-        .price { color: #28a745; font-weight: bold; }
+        :root { --primary: #1a73e8; --secondary: #28a745; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f8f9fa; }
+        nav { background: var(--primary); color: white; padding: 15px; text-align: center; font-size: 1.5rem; font-weight: bold; }
         
-        /* تصميم النافذة المنبثقة */
-        #modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); justify-content:center; align-items:center; z-index:2000; }
-        .modal-content { background:white; padding:25px; border-radius:10px; width:90%; max-width:400px; }
-        .modal-content h3 { margin-top: 0; }
-        .modal-content input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        /* نظام الأقسام */
+        .categories { display: flex; justify-content: center; gap: 10px; padding: 20px; flex-wrap: wrap; }
+        .cat-btn { background: white; border: 2px solid var(--primary); color: var(--primary); padding: 8px 20px; border-radius: 20px; cursor: pointer; transition: 0.3s; font-weight: bold; }
+        .cat-btn.active, .cat-btn:hover { background: var(--primary); color: white; }
+
+        .ads-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; padding: 20px; }
+        .ad-card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .ad-card img { width: 100%; height: 180px; object-fit: cover; }
+        .ad-card-content { padding: 15px; }
+        .price { color: var(--secondary); font-size: 1.2rem; font-weight: bold; }
+
+        /* زر الإضافة المخفي (يظهر فقط لك) */
+        #adminPanel { display: none; position: fixed; bottom: 20px; left: 20px; z-index: 1000; }
+        .admin-btn { background: #333; color: white; border: none; padding: 15px; border-radius: 50%; cursor: pointer; font-size: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+
+        #modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); justify-content:center; align-items:center; z-index:2000; }
+        .modal-content { background:white; padding:25px; border-radius:15px; width:90%; max-width:400px; }
+        .modal-content input, .modal-content select { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
     </style>
 </head>
 <body>
 
-    <nav>
-        <div style="font-size: 20px; font-weight: bold;">منصة الإعلانات العربية</div>
-        <button class="add-btn" id="openModalBtn">+ أضف إعلانك</button>
-    </nav>
+    <nav>إعلانات الأردن الاحترافية</nav>
 
-    <div class="ads-grid" id="adsContainer">
-        </div>
+    <div class="categories">
+        <button class="cat-btn active" onclick="filterAds('الكل', this)">الكل</button>
+        <button class="cat-btn" onclick="filterAds('سيارات', this)">سيارات</button>
+        <button class="cat-btn" onclick="filterAds('عقارات', this)">عقارات</button>
+        <button class="cat-btn" onclick="filterAds('إلكترونيات', this)">إلكترونيات</button>
+    </div>
+
+    <div class="ads-grid" id="adsContainer"></div>
+
+    <div id="adminPanel">
+        <button class="admin-btn" onclick="document.getElementById('modal').style.display='flex'">📝</button>
+    </div>
 
     <div id="modal">
         <div class="modal-content">
-            <h3>نشر إعلان جديد</h3>
-            <input type="text" id="titleInput" placeholder="عنوان الإعلان">
+            <h3>إضافة إعلان جديد (خاص بالمسؤول)</h3>
+            <input type="text" id="titleInput" placeholder="العنوان">
             <input type="text" id="priceInput" placeholder="السعر">
-            <input type="text" id="imgInput" placeholder="رابط صورة الإعلان">
-            <button class="add-btn" style="width: 100%;" id="saveBtn">نشر الآن</button>
-            <button class="add-btn" style="width: 100%; background: #999; margin-top: 10px;" id="closeModalBtn">إلغاء</button>
+            <input type="text" id="imgInput" placeholder="رابط الصورة">
+            <select id="categoryInput">
+                <option value="سيارات">سيارات</option>
+                <option value="عقارات">عقارات</option>
+                <option value="إلكترونيات">إلكترونيات</option>
+            </select>
+            <button class="cat-btn" style="width:100%; background:var(--secondary); color:white; border:none;" id="saveBtn">نشر</button>
+            <button onclick="document.getElementById('modal').style.display='none'" style="width:100%; margin-top:5px; background:#eee; border:none; padding:10px; border-radius:8px; cursor:pointer;">إلغاء</button>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // بيانات مشروعك الحقيقي كما في الصورة
         const firebaseConfig = {
             apiKey: "AIzaSyDtYpqqEgrOXV_mEQFEfca15xdTUhcjhkK",
             authDomain: "jo-ads-86c29.firebaseapp.com",
             projectId: "jo-ads-86c29",
             storageBucket: "jo-ads-86c29.firebasestorage.app",
             messagingSenderId: "379301641206",
-            appId: "1:379301641206:web:ef0afb32af0ce1986da5d7",
-            measurementId: "G-MMFSPJNK3W"
+            appId: "1:379301641206:web:ef0afb32af0ce1986da5d7"
         };
 
-        // تهيئة Firebase
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        const adsCol = collection(db, "ads");
+        let currentCategory = "الكل";
 
-        // التحكم في النافذة
-        const modal = document.getElementById('modal');
-        document.getElementById('openModalBtn').onclick = () => modal.style.display = 'flex';
-        document.getElementById('closeModalBtn').onclick = () => modal.style.display = 'none';
+        // --- ميزة سرية لك: اكتب في المتصفح رمز معين لإظهار زر الإضافة ---
+        // جرب كتابة كلمة "admin" في أي مكان في الصفحة بلوحة المفاتيح
+        let keys = "";
+        window.addEventListener('keydown', (e) => {
+            keys += e.key;
+            if (keys.includes("admin123")) { // كلمة السر هي admin123
+                document.getElementById('adminPanel').style.display = 'block';
+                keys = "";
+            }
+        });
 
-        // وظيفة حفظ الإعلان
+        window.filterAds = (category, btn) => {
+            currentCategory = category;
+            document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            loadAds();
+        };
+
+        const loadAds = () => {
+            let q = query(collection(db, "ads"), orderBy("createdAt", "desc"));
+            if (currentCategory !== "الكل") {
+                q = query(collection(db, "ads"), where("category", "==", currentCategory), orderBy("createdAt", "desc"));
+            }
+
+            onSnapshot(q, (snapshot) => {
+                const container = document.getElementById('adsContainer');
+                container.innerHTML = "";
+                snapshot.forEach((doc) => {
+                    const ad = doc.data();
+                    container.innerHTML += `
+                        <div class="ad-card">
+                            <img src="${ad.img}" onerror="this.src='https://via.placeholder.com/300x200'">
+                            <div class="ad-card-content">
+                                <h3>${ad.title}</h3>
+                                <p class="price">${ad.price}</p>
+                                <small style="color:#888">${ad.category || 'عام'}</small>
+                            </div>
+                        </div>`;
+                });
+            });
+        };
+
         document.getElementById('saveBtn').onclick = async () => {
             const title = document.getElementById('titleInput').value;
             const price = document.getElementById('priceInput').value;
             const img = document.getElementById('imgInput').value;
+            const category = document.getElementById('categoryInput').value;
 
             if (title && price && img) {
-                try {
-                    await addDoc(adsCol, {
-                        title: title,
-                        price: price,
-                        img: img,
-                        createdAt: new Date()
-                    });
-                    modal.style.display = 'none';
-                    alert("تم النشر بنجاح!");
-                    // تفريغ الخانات
-                    document.getElementById('titleInput').value = "";
-                    document.getElementById('priceInput').value = "";
-                    document.getElementById('imgInput').value = "";
-                } catch (e) {
-                    console.error("خطأ أثناء الإضافة: ", e);
-                    alert("حدث خطأ، يرجى المحاولة لاحقاً");
-                }
-            } else {
-                alert("يرجى ملء جميع البيانات");
+                await addDoc(collection(db, "ads"), { title, price, img, category, createdAt: new Date() });
+                document.getElementById('modal').style.display = 'none';
+                alert("تم النشر بنجاح!");
             }
         };
 
-        // عرض الإعلانات من السيرفر فور حدوث أي تغيير
-        const q = query(adsCol, orderBy("createdAt", "desc"));
-        onSnapshot(q, (snapshot) => {
-            const container = document.getElementById('adsContainer');
-            container.innerHTML = ""; 
-            snapshot.forEach((doc) => {
-                const ad = doc.data();
-                container.innerHTML += `
-                    <div class="ad-card">
-                        <img src="${ad.img}" onerror="this.src='https://via.placeholder.com/250x160?text=الصورة+غير+صالحة'">
-                        <div class="ad-card-content">
-                            <h3>${ad.title}</h3>
-                            <p class="price">${ad.price}</p>
-                        </div>
-                    </div>
-                `;
-            });
-        });
+        loadAds();
     </script>
 </body>
 </html>
