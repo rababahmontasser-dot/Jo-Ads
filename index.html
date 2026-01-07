@@ -2,59 +2,32 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jo Ads - النسخة المضمونة 100%</title>
+    <title>Jo Ads - اختبار الاتصال المباشر</title>
     <style>
-        :root { --primary: #1a73e8; --secondary: #28a745; }
-        body { font-family: sans-serif; margin: 0; background: #f0f2f5; }
-        nav { background: var(--primary); color: white; padding: 20px; text-align: center; font-weight: bold; font-size: 1.5rem; }
-        .tabs { display: flex; justify-content: center; gap: 10px; padding: 20px; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .tab-btn { padding: 10px 25px; border-radius: 25px; border: 2px solid var(--primary); background: white; color: var(--primary); cursor: pointer; font-weight: bold; }
-        .tab-btn.active { background: var(--primary); color: white; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; padding: 20px; }
-        .card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); padding-bottom: 10px; }
-        .card img { width: 100%; height: 180px; object-fit: cover; }
-        #adminUI { display: none; position: fixed; bottom: 25px; left: 25px; z-index: 1000; }
-        .add-btn { width: 60px; height: 60px; border-radius: 50%; background: #333; color: white; border: none; font-size: 30px; cursor: pointer; }
-        #formBox { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); justify-content:center; align-items:center; z-index:2000; }
-        .form-content { background:white; padding:25px; border-radius:15px; width:90%; max-width:380px; }
-        input, select { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
+        body { font-family: sans-serif; background: #f4f4f4; text-align: center; margin: 0; }
+        .nav { background: #1a73e8; color: white; padding: 15px; font-size: 20px; }
+        .tabs { padding: 15px; background: white; }
+        .btn { padding: 10px 20px; cursor: pointer; border: 1px solid #1a73e8; background: white; }
+        .btn.active { background: #1a73e8; color: white; }
+        .ads-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; padding: 20px; }
+        .ad-item { background: white; border-radius: 8px; width: 250px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); overflow: hidden; }
+        .ad-item img { width: 100%; height: 150px; object-fit: cover; }
     </style>
 </head>
 <body>
 
-    <nav>Jo Ads - الأردن</nav>
-
+    <div class="nav">Jo Ads - جاري فحص الاتصال...</div>
+    
     <div class="tabs">
-        <button class="tab-btn active" id="tabMain">الرئيسية</button>
-        <button class="tab-btn" id="tabCars">سيارات</button>
-        <button class="tab-btn" id="tabReal">عقارات</button>
+        <button class="btn" id="goCars">عرض السيارات</button>
+        <button class="btn" id="goReal">عرض العقارات</button>
     </div>
 
-    <div id="mainDisplay" class="grid"></div>
-
-    <div id="adminUI">
-        <button class="add-btn" id="btnShowForm">+</button>
-    </div>
-
-    <div id="formBox">
-        <div class="form-content">
-            <h3 style="text-align:center">إضافة إعلان جديد</h3>
-            <input type="text" id="inpTitle" placeholder="العنوان">
-            <input type="text" id="inpPrice" placeholder="السعر">
-            <input type="file" id="inpFile" accept="image/*">
-            <select id="inpCat">
-                <option value="سيارات">سيارات</option>
-                <option value="عقارات">عقارات</option>
-            </select>
-            <button id="btnPush" style="width:100%; background:var(--secondary); color:white; padding:12px; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">نشر الآن</button>
-            <button id="btnCancel" style="width:100%; border:none; background:none; margin-top:10px; cursor:pointer; color:gray;">إلغاء</button>
-        </div>
-    </div>
+    <div id="displayArea" class="ads-list">سيظهر هنا أي شيء موجود في قاعدة البيانات...</div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, where, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDtYpqqEgrOXV_mEQFEfca15xdTUhcjhkK",
@@ -67,98 +40,44 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        
-        let currentMode = "الرئيسية";
-        let masterMode = false;
-        const display = document.getElementById('mainDisplay');
 
-        // دالة عرض البيانات
-        const refreshAds = () => {
-            if (currentMode === "الرئيسية") {
-                display.innerHTML = <div style="grid-column:1/-1; text-align:center; padding-top:60px;"><h2>أهلاً بك في Jo Ads</h2><p>اختر قسماً من الأعلى لمشاهدة العروض</p></div>;
-                return;
-            }
-
-            const q = query(collection(db, "ads"), where("category", "==", currentMode));
-            onSnapshot(q, (snap) => {
-                display.innerHTML = "";
-                if(snap.empty) {
-                    display.innerHTML = <p style="grid-column:1/-1; text-align:center;">لا يوجد إعلانات حالياً في ${currentMode}</p>;
+        // وظيفة جلب "كل شيء" بدون استثناء
+        function getAllData() {
+            const adsCol = collection(db, "ads");
+            
+            onSnapshot(adsCol, (snapshot) => {
+                const area = document.getElementById('displayArea');
+                area.innerHTML = "";
+                
+                if (snapshot.empty) {
+                    area.innerHTML = "قاعدة البيانات فارغة تماماً! لم يتم العثور على أي مستند.";
                     return;
                 }
-                snap.forEach((s) => {
-                    const d = s.data();
-                    const card = document.createElement('div');
-                    card.className = 'card';
-                    card.innerHTML = `
-                        <img src="${d.img}">
-                        <div style="padding:15px; text-align:right;">
-                            <h4 style="color:green; margin:0">${d.price}</h4>
-                            <h3 style="margin:5px 0;">${d.title}</h3>
+
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    area.innerHTML += `
+                        <div class="ad-item">
+                            <img src="${data.img}">
+                            <div style="padding:10px">
+                                <h3>${data.title}</h3>
+                                <p style="color:blue">${data.category}</p>
+                            </div>
                         </div>`;
-                    
-                    if(masterMode) {
-                        const del = document.createElement('button');
-                        del.innerText = "حذف 🗑️";
-                        del.style = "background:red; color:white; border:none; width:90%; margin:5px 5%; padding:8px; border-radius:5px; cursor:pointer;";
-                        del.onclick = async () => { if(confirm("هل تريد حذف الإعلان؟")) await deleteDoc(doc(db, "ads", s.id)); };
-                        card.appendChild(del);
-                    }
-                    display.appendChild(card);
                 });
-            }, (err) => { alert("خطأ في قاعدة البيانات: " + err.message); });
-        };
+                alert("نجح الاتصال! تم العثور على " + snapshot.size + " إعلانات.");
+            }, (error) => {
+                alert("فشل Firebase: " + error.message);
+                console.error(error);
+            });
+        }
 
-        // التحكم بالأزرار
-        const setTab = (id, cat) => {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            currentMode = cat;
-            refreshAds();
-        };
+        // ربط الأزرار لتشغيل الجلب
+        document.getElementById('goCars').onclick = () => { getAllData(); };
+        document.getElementById('goReal').onclick = () => { getAllData(); };
 
-        document.getElementById('tabMain').onclick = () => setTab('tabMain', 'الرئيسية');
-        document.getElementById('tabCars').onclick = () => setTab('tabCars', 'سيارات');
-        document.getElementById('tabReal').onclick = () => setTab('tabReal', 'عقارات');
-
-        // الدخول للإدارة
-        window.onkeydown = (e) => {
-            if (e.key === 'Enter') {
-                const pass = prompt("أدخل رمز الإدارة:");
-                if (pass === "admin123") {
-                    masterMode = true;
-                    document.getElementById('adminUI').style.display = 'block';
-                    refreshAds();
-                    alert("تم تفعيل صلاحيات الإدارة ✅");
-                }
-            }
-        };
-
-        document.getElementById('btnShowForm').onclick = () => document.getElementById('formBox').style.display='flex';
-        document.getElementById('btnCancel').onclick = () => document.getElementById('formBox').style.display='none';
-
-        document.getElementById('btnPush').onclick = async () => {
-            const f = document.getElementById('inpFile').files[0];
-            const t = document.getElementById('inpTitle').value;
-            const p = document.getElementById('inpPrice').value;
-            const c = document.getElementById('inpCat').value;
-
-            if(!f || !t) return alert("يرجى اختيار صورة وكتابة عنوان");
-            
-            document.getElementById('btnPush').innerText = "جاري النشر...";
-            const fd = new FormData();
-            fd.append("file", f); fd.append("upload_preset", "ml_default");
-
-            try {
-                const res = await fetch("https://api.cloudinary.com/v1_1/dnm9qjjdg/image/upload", { method: "POST", body: fd });
-                const json = await res.json();
-                await addDoc(collection(db, "ads"), { title: t, price: p, category: c, img: json.secure_url, createdAt: new Date() });
-                alert("تم بنجاح!");
-                location.reload();
-            } catch (e) { alert("فشل الرفع!"); }
-        };
-
-        refreshAds();
+        // محاولة جلب تلقائي عند الفتح
+        getAllData();
     </script>
 </body>
 </html>
